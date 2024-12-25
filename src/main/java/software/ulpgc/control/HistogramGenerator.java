@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 public class HistogramGenerator {
-    public Histogram generate(List<Title> titles) {
-        Map<String, Integer> map = new HashMap<>();
-        for(Title title : titles) {
-            map.putIfAbsent(title.type().name(), 0);
-            map.compute(title.type().name(), (k, v) -> v + 1);
-        }
+    private final Map<String, Integer> map = new HashMap<>();
+    public void feed(Title title) {
+        String type = title.type().name();
+        map.putIfAbsent(type, 0);
+        map.compute(type, (k, v) -> v + 1);
+    }
+
+    public Histogram get() {
         return new FromMapHistogram(map);
     }
 

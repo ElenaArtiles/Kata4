@@ -1,8 +1,10 @@
 package software.ulpgc;
 
 import software.ulpgc.control.HistogramGenerator;
-import software.ulpgc.control.TitleReader;
-import software.ulpgc.control.TsvTitleReader;
+import software.ulpgc.control.TitleLoader;
+import software.ulpgc.control.io.SQLiteTitleReader;
+import software.ulpgc.control.io.TitleReader;
+import software.ulpgc.control.io.TsvTitleReader;
 import software.ulpgc.model.Histogram;
 import software.ulpgc.model.Title;
 import software.ulpgc.view.MainFrame;
@@ -13,9 +15,9 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        TitleReader reader = new TsvTitleReader(new File(args[0]), true);
-        Histogram histogramData = generateHistogram(reader);
-        display(histogramData);
+        File dbFile = new File(args[1]);
+        new TitleLoader(new File(args[0]), dbFile).execute();
+        display(generateHistogram(dbFile));
 
     }
 
@@ -25,9 +27,17 @@ public class Main {
         mainFrame.setVisible(true);
     }
 
-    private static Histogram generateHistogram(TitleReader reader) throws IOException {
-        List<Title> titles = reader.read();
-        return new HistogramGenerator().generate(titles);
+    private static Histogram generateHistogram(File dbFile) {
+        HistogramGenerator generator = new HistogramGenerator();
+        try (SQLiteTitleReader reader = new SQLiteTitleReader(dbFile)){
+            Title title;
+            while ((title = reader.read()) != null){
+                generator.feed(title);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return generator.get();
     }
 
 }
